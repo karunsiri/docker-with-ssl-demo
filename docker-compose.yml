@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  webserver:
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d
+      - ./dhparam:/etc/ssl/certs
+      - certbot-etc:/etc/letsencrypt
+    depends_on:
+      - service-a
+      - service-b
+    networks:
+      - app-network
+  service-a:
+    build:
+      context: ./subdomain-a
+    restart: unless-stopped
+    volumes:
+      - ./subdomain-a/nginx-conf:/etc/nginx/conf.d
+    networks:
+      - app-network
+  service-b:
+    build:
+      context: ./subdomain-b
+    restart: unless-stopped
+    volumes:
+      - ./subdomain-b/nginx-conf:/etc/nginx/conf.d
+    networks:
+      - app-network
+
+volumes:
+  certbot-etc:
+    driver: local
+    driver_opts:
+      type: none
+      # map to letsencrypt folder in host machine. NEVER put the keys in Git.
+      device: /etc/letsencrypt
+      o: bind
+
+networks:
+  app-network:
+    driver: bridge
